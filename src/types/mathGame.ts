@@ -66,6 +66,7 @@ export interface ProblemAttemptRecord {
   problemId: string;
   missionId: number;
   operation: OperationType;
+  skill?: string;
   themeContext: string;
   operationAttempts: number;
   operationWrongPicks: OperationType[];
@@ -73,6 +74,10 @@ export interface ProblemAttemptRecord {
   calculationAttempts: number;
   calculationWrongAnswers: number[];
   calculationFirstTrySuccess: boolean;
+  chosenAnswer?: number;
+  correctAnswer?: number;
+  isFirstTry?: boolean;
+  isCorrectAfterCorrection?: boolean;
   usedMasterClue: boolean;
   usedMagnifier: boolean;
   usedManipulatives: boolean;

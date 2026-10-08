@@ -1,0 +1,184 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "Perfil do Estudante",
+      "description": "Dados do estudante e resumo de progresso nas missões",
+      "type": "object",
+      "properties": {
+        "studentCode": {
+          "type": "string",
+          "description": "Código individual do aluno",
+          "maxLength": 64
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Nome completo em caixa alta",
+          "maxLength": 128
+        },
+        "className": {
+          "type": "string",
+          "description": "Turma do aluno",
+          "maxLength": 64
+        },
+        "schoolName": {
+          "type": "string",
+          "description": "Nome da escola",
+          "maxLength": 128
+        },
+        "completedCount": {
+          "type": "number",
+          "description": "Quantidade de desafios completados"
+        },
+        "starsEarned": {
+          "type": "number",
+          "description": "Estrelas obtidas"
+        },
+        "totalTimeSeconds": {
+          "type": "number",
+          "description": "Tempo total acumulado em segundos"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Data de início"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Última atualização"
+        }
+      },
+      "required": ["studentCode", "studentName", "className"]
+    },
+    "StudentResponse": {
+      "title": "Resposta do Estudante",
+      "description": "Registro de resposta individual de situação-problema",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador determinístico (studentCode_problemId)",
+          "maxLength": 128
+        },
+        "studentCode": {
+          "type": "string",
+          "description": "Código individual do aluno",
+          "maxLength": 64
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Nome em caixa alta do aluno",
+          "maxLength": 128
+        },
+        "className": {
+          "type": "string",
+          "description": "Turma do aluno",
+          "maxLength": 64
+        },
+        "schoolName": {
+          "type": "string",
+          "description": "Nome da escola",
+          "maxLength": 128
+        },
+        "problemId": {
+          "type": "string",
+          "description": "ID do problema resolvido",
+          "maxLength": 32
+        },
+        "missionId": {
+          "type": "number",
+          "description": "Número da missão (1 a 4)"
+        },
+        "skill": {
+          "type": "string",
+          "description": "Código da habilidade BNCC",
+          "maxLength": 64
+        },
+        "operation": {
+          "type": "string",
+          "description": "Operação matemática (+, -, *, /)",
+          "maxLength": 8
+        },
+        "themeContext": {
+          "type": "string",
+          "description": "Tema contextual do desafio",
+          "maxLength": 128
+        },
+        "chosenAnswer": {
+          "type": "number",
+          "description": "Alternativa escolhida"
+        },
+        "correctAnswer": {
+          "type": "number",
+          "description": "Resposta correta"
+        },
+        "isCorrect": {
+          "type": "boolean",
+          "description": "Se a resposta final foi correta"
+        },
+        "isFirstTry": {
+          "type": "boolean",
+          "description": "Se acertou na primeira tentativa"
+        },
+        "isCorrectAfterCorrection": {
+          "type": "boolean",
+          "description": "Se acertou após correção de erros anteriores"
+        },
+        "attemptsCount": {
+          "type": "number",
+          "description": "Número de tentativas realizadas"
+        },
+        "timeSpentSeconds": {
+          "type": "number",
+          "description": "Tempo em segundos para resolver"
+        },
+        "timeSpentFormatted": {
+          "type": "string",
+          "description": "Tempo formatado",
+          "maxLength": 32
+        },
+        "answeredAt": {
+          "type": "string",
+          "description": "Horário/Data do envio",
+          "maxLength": 64
+        },
+        "date": {
+          "type": "string",
+          "description": "Data no formato YYYY-MM-DD para filtros",
+          "maxLength": 16
+        }
+      },
+      "required": ["id", "studentCode", "studentName", "className", "problemId", "missionId", "skill", "isCorrect"]
+    },
+    "TeacherAdmin": {
+      "title": "Professor Administrador",
+      "description": "Registro de permissão do professor",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email do professor",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "description": "Papel do usuário",
+          "maxLength": 32
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/students/{studentCode}": {
+      "schema": { "$ref": "#/entities/StudentProfile" },
+      "description": "Coleção com os perfis e estatísticas consolidadas dos estudantes"
+    },
+    "/student_responses/{responseId}": {
+      "schema": { "$ref": "#/entities/StudentResponse" },
+      "description": "Coleção de registros individuais de resposta para cada situação-problema"
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/TeacherAdmin" },
+      "description": "Coleção que autoriza o professor administrador para visualização do painel"
+    }
+  }
+}

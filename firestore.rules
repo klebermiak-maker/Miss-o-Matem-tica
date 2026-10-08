@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Teacher check: Authorized strictly for klebermiak@gmail.com with verified email
+    function isTeacher() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email == 'klebermiak@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admin authorization collection
+    match /admins/{adminUid} {
+      allow read: if isTeacher() || (isSignedIn() && request.auth.uid == adminUid);
+      allow write: if isTeacher();
+    }
+
+    // Students profiles:
+    // Teachers have full read/list/delete access.
+    // Students can only save/update their profile during gameplay.
+    // Students CANNOT list all students (prevents querying peers).
+    match /students/{studentCode} {
+      allow get: if isTeacher() || isValidId(studentCode);
+      allow list: if isTeacher();
+      allow create, update: if isValidId(studentCode) &&
+        request.resource.data.studentCode == studentCode &&
+        request.resource.data.studentName is string &&
+        request.resource.data.studentName.size() <= 128 &&
+        request.resource.data.className is string &&
+        request.resource.data.className.size() <= 64;
+      allow delete: if isTeacher();
+    }
+
+    // Individual problem responses:
+    // Teachers have full list/read/delete access to audit answers.
+    // Students can save/update their individual responses deterministically (responseId = studentCode_problemId).
+    // Students CANNOT list responses (preventing them from looking up classmates' answers).
+    match /student_responses/{responseId} {
+      allow list: if isTeacher();
+      allow get: if isTeacher() || isValidId(responseId);
+      allow create, update: if isValidId(responseId) &&
+        request.resource.data.id == responseId &&
+        request.resource.data.studentCode is string &&
+        request.resource.data.studentCode.size() <= 64 &&
+        request.resource.data.studentName is string &&
+        request.resource.data.studentName.size() <= 128 &&
+        request.resource.data.problemId is string &&
+        request.resource.data.problemId.size() <= 32 &&
+        request.resource.data.missionId is number &&
+        request.resource.data.isCorrect is bool;
+      allow delete: if isTeacher();
+    }
+  }
+}

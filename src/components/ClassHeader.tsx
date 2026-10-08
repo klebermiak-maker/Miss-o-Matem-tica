@@ -1,8 +1,12 @@
 import React from 'react';
-import { Star, Award, BookOpen, User, BarChart3, Database, UserPlus } from 'lucide-react';
+import { Star, Award, BookOpen, User, BarChart3, Database, ShieldCheck, Cloud, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CloudSyncStatus } from '../services/cloudDb';
 
 interface Props {
   studentName: string;
+  studentCode?: string;
+  studentClass?: string;
+  syncStatus?: CloudSyncStatus;
   onStudentNameChange: (name: string) => void;
   starsEarned: number;
   totalPossibleStars: number;
@@ -11,12 +15,16 @@ interface Props {
   onOpenReport: () => void;
   onOpenDatabase: () => void;
   onOpenWelcome: () => void;
+  onOpenTeacherDashboard: () => void;
   currentMissionId: number;
   onSelectMission: (id: number) => void;
 }
 
 export const ClassHeader: React.FC<Props> = ({
   studentName,
+  studentCode,
+  studentClass = '3° ANO B',
+  syncStatus = 'idle',
   onStudentNameChange,
   starsEarned,
   totalPossibleStars,
@@ -25,6 +33,7 @@ export const ClassHeader: React.FC<Props> = ({
   onOpenReport,
   onOpenDatabase,
   onOpenWelcome,
+  onOpenTeacherDashboard,
   currentMissionId,
   onSelectMission,
 }) => {
@@ -89,35 +98,46 @@ export const ClassHeader: React.FC<Props> = ({
 
         {/* Zone 3: Primary actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Dedicated Teacher Area with Google Auth */}
+          <button
+            type="button"
+            onClick={onOpenTeacherDashboard}
+            className="px-2.5 sm:px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-xs"
+            title="Área do Professor: Login Google restrito, gráficos e relatórios na nuvem"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Área do Professor</span>
+            <span className="sm:hidden">Professor</span>
+          </button>
+
           <button
             type="button"
             onClick={onOpenDatabase}
             className="px-2.5 sm:px-3 py-1.5 text-xs font-bold text-indigo-950 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
-            title="Abrir Banco de Dados com respostas de todos os alunos"
+            title="Abrir Banco de Dados da turma"
           >
             <Database className="w-3.5 h-3.5 text-indigo-600" />
-            <span className="hidden sm:inline">Banco de Dados</span>
-            <span className="sm:hidden">Banco</span>
+            <span className="hidden md:inline">Banco</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenReport}
-            className="px-2.5 sm:px-3 py-1.5 text-xs font-bold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+            className="hidden md:flex px-2.5 sm:px-3 py-1.5 text-xs font-bold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors items-center gap-1.5 whitespace-nowrap shadow-2xs"
             title="Acompanhar desempenho e diagnóstico da Profa. Simone"
           >
             <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="hidden md:inline">Desempenho</span>
+            <span>Desempenho</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenTeacherCorner}
-            className="px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
-            title="Área Pedagógica da Professora"
+            className="hidden lg:flex px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors items-center gap-1.5 whitespace-nowrap"
+            title="Guia da Professora Simone"
           >
             <BookOpen className="w-3.5 h-3.5 text-slate-600" />
-            <span className="hidden xl:inline">Guia da</span> Professora
+            <span>Guia Profa.</span>
           </button>
 
           <button
@@ -140,38 +160,69 @@ export const ClassHeader: React.FC<Props> = ({
               Escola Municipal Educandário Nossa Senhora Aparecida
             </span>
             <span aria-hidden="true" className="text-slate-600">·</span>
-            <span className="text-amber-300 font-bold">Turma: 3° ANO B · Matutino</span>
+            <span className="text-amber-300 font-bold">Turma: {studentClass}</span>
             <span aria-hidden="true" className="text-slate-600">·</span>
             <span>Professora: Simone Rosa</span>
-            <span aria-hidden="true" className="text-slate-600">·</span>
-            <span className="text-slate-200">Quinta-feira, 3ª aula</span>
             <span aria-hidden="true" className="text-slate-600">·</span>
             <span className="text-emerald-400 font-mono">EF03CO02</span>
           </div>
 
-          {/* Student Profile & Stars Tally with Visual Progress */}
+          {/* Student Profile & Cloud Sync & Stars Tally */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 rounded-lg px-2 py-1">
+            {/* Cloud Sync State Pill */}
+            <div
+              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold border transition-colors ${
+                syncStatus === 'saving'
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  : syncStatus === 'saved'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : syncStatus === 'error'
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                  : 'bg-slate-800 text-slate-300 border-slate-700'
+              }`}
+              title="Status da conexão com Cloud Firestore"
+            >
+              {syncStatus === 'saving' ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin text-amber-300" />
+                  <span className="hidden sm:inline">Salvando...</span>
+                </>
+              ) : syncStatus === 'saved' ? (
+                <>
+                  <Cloud className="w-3 h-3 text-emerald-400" />
+                  <span className="hidden sm:inline">Nuvem OK</span>
+                </>
+              ) : syncStatus === 'error' ? (
+                <>
+                  <AlertCircle className="w-3 h-3 text-rose-400" />
+                  <span className="hidden sm:inline">Offline</span>
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-3 h-3 text-slate-400" />
+                  <span className="hidden sm:inline">Nuvem Conectada</span>
+                </>
+              )}
+            </div>
+
+            {/* Student profile tag */}
+            <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1">
               <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <input
-                type="text"
-                value={studentName}
-                onChange={(e) => {
-                  // Solicitar apenas o primeiro nome
-                  const val = e.target.value;
-                  const first = val.trim().split(/\s+/)[0] || '';
-                  onStudentNameChange(first);
-                }}
-                placeholder="1° nome do aluno"
-                aria-label="Primeiro nome do aluno"
-                title="Apenas o primeiro nome (sem sobrenome)"
-                className="bg-transparent text-white placeholder-slate-400 text-xs font-semibold focus:outline-none w-24 sm:w-28"
-              />
+              <div className="flex items-center gap-1 font-bold">
+                <span className="text-white text-xs uppercase tracking-wide">
+                  {studentName.trim() || 'ALUNO'}
+                </span>
+                {studentCode && (
+                  <span className="text-[10px] font-mono text-amber-300 bg-slate-900 px-1 py-0.2 rounded border border-slate-700">
+                    {studentCode}
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={onOpenWelcome}
                 className="text-[10px] text-amber-300 hover:text-amber-200 font-bold bg-slate-700/80 px-1.5 py-0.5 rounded transition-colors ml-1"
-                title="Trocar aluno ou cadastrar novo primeiro nome"
+                title="Trocar dados do aluno (nome, turma, código)"
               >
                 Trocar
               </button>

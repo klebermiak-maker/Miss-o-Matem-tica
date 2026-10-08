@@ -1,14 +1,20 @@
 import React from 'react';
-import { X, BookOpen, CheckCircle2, FileText, Sparkles, Printer, BarChart3 } from 'lucide-react';
+import { X, BookOpen, CheckCircle2, FileText, Sparkles, Printer, BarChart3, ShieldCheck } from 'lucide-react';
 import { MISSIONS_DATA } from '../data/missionsData';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onOpenReport?: () => void;
+  onOpenTeacherDashboard?: () => void;
 }
 
-export const TeacherCornerModal: React.FC<Props> = ({ isOpen, onClose, onOpenReport }) => {
+export const TeacherCornerModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  onOpenReport,
+  onOpenTeacherDashboard
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -30,6 +36,20 @@ export const TeacherCornerModal: React.FC<Props> = ({ isOpen, onClose, onOpenRep
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {onOpenTeacherDashboard && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenTeacherDashboard();
+                }}
+                className="px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg flex items-center gap-1.5 shadow-2xs"
+                title="Abrir painel com login Google e Cloud Firestore"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Painel na Nuvem</span>
+              </button>
+            )}
             {onOpenReport && (
               <button
                 type="button"
@@ -40,7 +60,7 @@ export const TeacherCornerModal: React.FC<Props> = ({ isOpen, onClose, onOpenRep
                 className="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center gap-1.5 shadow-2xs"
               >
                 <BarChart3 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Desempenho do Aluno</span>
+                <span className="hidden sm:inline">Desempenho</span>
               </button>
             )}
             <button

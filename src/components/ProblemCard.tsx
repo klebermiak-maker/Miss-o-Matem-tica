@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Problem, OperationType, ProblemAttemptRecord } from '../types/mathGame';
 import { InteractiveManipulatives } from './InteractiveManipulatives';
+import { getMissionSkill, CloudSyncStatus } from '../services/cloudDb';
 import {
   Volume2,
   VolumeX,
@@ -15,7 +16,9 @@ import {
   Timer,
   Clock,
   Pause,
-  Play
+  Play,
+  Cloud,
+  Loader2
 } from 'lucide-react';
 import {
   playSuccessSound,
@@ -31,6 +34,7 @@ interface Props {
   totalProblems: number;
   missionId: number;
   missionOperation: OperationType;
+  syncStatus?: CloudSyncStatus;
   onProblemCompleted: (problemId: string, isCorrect: boolean, attemptRecord?: ProblemAttemptRecord) => void;
   onNextProblem: () => void;
   isLastProblem: boolean;
@@ -41,6 +45,7 @@ export const ProblemCard: React.FC<Props> = ({
   problemIndex,
   totalProblems,
   missionId,
+  syncStatus = 'idle',
   onProblemCompleted,
   onNextProblem,
   isLastProblem
@@ -203,13 +208,20 @@ export const ProblemCard: React.FC<Props> = ({
       setIsTimerRunning(false);
 
       const isOpFirstTry = opWrongPicks.length === 0;
-      const isCalcFirstTry = calcWrongAnswers.length === 0;
+      const isCalcFirstTry = calcWrongAnswers.length === 0 && newCalcAttempts === 1;
+      const isFirstTry = isOpFirstTry && isCalcFirstTry;
+      const isCorrectAfterCorrection = !isFirstTry;
 
       const record: ProblemAttemptRecord = {
         problemId: problem.id,
         missionId,
+        skill: getMissionSkill(missionId),
         operation: problem.operation,
         themeContext: problem.themeContext,
+        chosenAnswer: ans,
+        correctAnswer: problem.correctAnswer,
+        isFirstTry,
+        isCorrectAfterCorrection,
         operationAttempts: opAttempts + 1,
         operationWrongPicks: opWrongPicks,
         operationFirstTrySuccess: isOpFirstTry,
@@ -457,6 +469,44 @@ export const ProblemCard: React.FC<Props> = ({
               >
                 {isTimerRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
               </button>
+            )}
+          </div>
+
+          {/* Cloud Sync Status Badge */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all ${
+              syncStatus === 'saving'
+                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                : syncStatus === 'saved'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : syncStatus === 'error'
+                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                : 'bg-slate-50 text-slate-600 border-slate-200'
+            }`}
+            title="Status do Cloud Firestore: salvando em tempo real durante a partida"
+          >
+            {syncStatus === 'saving' ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin shrink-0" />
+                <span className="hidden sm:inline">Salvando na nuvem...</span>
+                <span className="sm:hidden">Salvando...</span>
+              </>
+            ) : syncStatus === 'saved' ? (
+              <>
+                <Cloud className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="hidden sm:inline">Salvo na nuvem</span>
+                <span className="sm:hidden">Salvo</span>
+              </>
+            ) : syncStatus === 'error' ? (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>Pendente / Local</span>
+              </>
+            ) : (
+              <>
+                <Cloud className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="hidden sm:inline">Nuvem Conectada</span>
+              </>
             )}
           </div>
 

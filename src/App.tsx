@@ -12,7 +12,13 @@ import { StudentReportModal } from './components/StudentReportModal';
 import { ClassDatabaseModal } from './components/ClassDatabaseModal';
 import { StudentWelcomeModal } from './components/StudentWelcomeModal';
 import { MissionCompletedModal } from './components/MissionCompletedModal';
+import { TeacherDashboardModal } from './components/TeacherDashboardModal';
 import { ClassDatabaseService } from './services/db';
+import {
+  CloudDatabaseService,
+  subscribeToSyncStatus,
+  CloudSyncStatus
+} from './services/cloudDb';
 import {
   Trophy,
   Award,
@@ -27,9 +33,22 @@ import { playVictoryFanfare, playClickSound } from './utils/audio';
 export default function App() {
   const [studentName, setStudentName] = useState<string>(() => {
     const saved = localStorage.getItem('missao_matematica_aluno') || '';
-    const first = saved.trim().split(/\s+/)[0] || '';
-    return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';
+    return saved.trim().toUpperCase();
   });
+
+  const [studentCode, setStudentCode] = useState<string>(() => {
+    return localStorage.getItem('missao_matematica_codigo') || '3B-01';
+  });
+
+  const [studentClass, setStudentClass] = useState<string>(() => {
+    return localStorage.getItem('missao_matematica_turma') || '3° ANO B';
+  });
+
+  const [syncStatus, setSyncStatus] = useState<CloudSyncStatus>('idle');
+
+  useEffect(() => {
+    return subscribeToSyncStatus((status) => setSyncStatus(status));
+  }, []);
 
   const [currentMissionId, setCurrentMissionId] = useState<number>(1);
   const [currentProblemIndex, setCurrentProblemIndex] = useState<number>(0);
@@ -56,6 +75,7 @@ export default function App() {
   const [isTeacherCornerOpen, setIsTeacherCornerOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
+  const [isTeacherDashboardOpen, setIsTeacherDashboardOpen] = useState(false);
   const [isMissionCompletedModalOpen, setIsMissionCompletedModalOpen] = useState(false);
   const [completedMissionToCelebrate, setCompletedMissionToCelebrate] = useState<Mission | null>(null);
   // Solicit student name upfront if not already provided
@@ -68,6 +88,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('missao_matematica_aluno', studentName);
   }, [studentName]);
+
+  useEffect(() => {
+    localStorage.setItem('missao_matematica_codigo', studentCode);
+  }, [studentCode]);
+
+  useEffect(() => {
+    localStorage.setItem('missao_matematica_turma', studentClass);
+  }, [studentClass]);
 
   useEffect(() => {
     localStorage.setItem('missao_matematica_concluidos', JSON.stringify(completedProblems));
@@ -154,9 +182,11 @@ export default function App() {
           ...prev,
           [problemId]: attemptRecord,
         }));
-        // Persist response to Class Database
-        ClassDatabaseService.saveResponse(
-          studentName || 'Estudante 3° B',
+        // Persist response to Cloud Firestore during match (with local mirror)
+        CloudDatabaseService.saveResponse(
+          studentCode,
+          studentName || 'ALUNO',
+          studentClass,
           problemId,
           attemptRecord
         );
@@ -218,6 +248,9 @@ export default function App() {
       {/* 1. Header with class specifications and top bar contract */}
       <ClassHeader
         studentName={studentName}
+        studentCode={studentCode}
+        studentClass={studentClass}
+        syncStatus={syncStatus}
         onStudentNameChange={setStudentName}
         starsEarned={starsEarned}
         totalPossibleStars={totalPossibleStars}
@@ -226,6 +259,7 @@ export default function App() {
         onOpenReport={() => setIsReportModalOpen(true)}
         onOpenDatabase={() => setIsDatabaseModalOpen(true)}
         onOpenWelcome={() => setIsWelcomeModalOpen(true)}
+        onOpenTeacherDashboard={() => setIsTeacherDashboardOpen(true)}
         currentMissionId={currentMissionId}
         onSelectMission={handleSelectMission}
       />
@@ -420,6 +454,7 @@ export default function App() {
             totalProblems={currentMission.problems.length}
             missionId={currentMissionId}
             missionOperation={currentMission.operation}
+            syncStatus={syncStatus}
             onProblemCompleted={handleProblemCompleted}
             onNextProblem={handleNextProblem}
             isLastProblem={currentProblemIndex === currentMission.problems.length - 1}
@@ -583,6 +618,7 @@ export default function App() {
         isOpen={isTeacherCornerOpen}
         onClose={() => setIsTeacherCornerOpen(false)}
         onOpenReport={() => setIsReportModalOpen(true)}
+        onOpenTeacherDashboard={() => setIsTeacherDashboardOpen(true)}
       />
 
       <StudentReportModal
@@ -607,13 +643,25 @@ export default function App() {
         }}
       />
 
+      <TeacherDashboardModal
+        isOpen={isTeacherDashboardOpen}
+        onClose={() => setIsTeacherDashboardOpen(false)}
+      />
+
       <StudentWelcomeModal
         isOpen={isWelcomeModalOpen}
         onClose={() => setIsWelcomeModalOpen(false)}
         currentStudentName={studentName}
-        onConfirmName={(name) => {
-          setStudentName(name);
-          handleSelectStudentToPlay(name);
+        currentStudentCode={studentCode}
+        currentStudentClass={studentClass}
+        onConfirmStudent={({ studentName: sName, studentCode: sCode, studentClass: sClass }) => {
+          setStudentName(sName);
+          setStudentCode(sCode);
+          setStudentClass(sClass);
+          localStorage.setItem('missao_matematica_aluno', sName);
+          localStorage.setItem('missao_matematica_codigo', sCode);
+          localStorage.setItem('missao_matematica_turma', sClass);
+          handleSelectStudentToPlay(sName);
         }}
       />
     </div>
