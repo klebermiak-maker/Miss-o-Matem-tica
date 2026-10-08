@@ -1,0 +1,6 @@
+{
+  "name": "Missão Matemática - 3° Ano B",
+  "description": "Jogo educativo com 4 missões sobre as quatro operações matemáticas para o 3° Ano B da Professora Simone Rosa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
